@@ -9,3 +9,82 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  CUSTOMER  // Can add menus to cart & create order
+  ADMIN     // Can add/delete menus and handle orders
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  password     String
+  role         Role      @default(CUSTOMER)
+
+  refreshToken String?
+  accessToken  String?
+
+  carts        Cart[]
+
+  orders       Order[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Menu {
+  id        String   @id @default(uuid())
+  name      String
+  image     String?
+  price     Float
+
+  cartItems CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  quantity  Int
+  total     Float
+
+  menu      Menu     @relation(fields: [menuId], references: [id])
+  menuId    String
+
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  cartId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cart {
+  id        String   @id @default(uuid())
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  cartItems CartItem[]
+
+  order     Order?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  total     Float
+  status    String
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  cartId    String   @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
