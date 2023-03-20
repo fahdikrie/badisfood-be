@@ -1,54 +1,17 @@
-version: '3.8'
-
 services:
-  badisfood-be:
-    container_name: badisfood-be
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - '${PORT:-8080}:${PORT:-8080}'
-    depends_on:
-      - postgres
+  postgres:
+    image: postgres
+    restart: always
     env_file:
-      - .env
-
-  postgres:
-    container_name: badisfood-postgres
-    image: postgres:14.6-alpine3.16
+        - .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      PGDATA: /data/postgres
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - postgres:/data/postgres
+      - postgres:/var/lib/postgresql/data
     ports:
-      - '${POSTGRES_PORT:-5432}:5432'
-    networks:
-      - postgres
-    restart: unless-stopped
-
-  pgadmin:
-    container_name: badisfood-pgadmin
-    image: dpage/pgadmin4:6.20
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-    volumes:
-      - pgadmin:/root/.pgadmin
-    ports:
-      - '${PGADMIN_PORT:-5050}:80'
-    networks:
-      - postgres
-    restart: unless-stopped
-
-networks:
-  postgres:
-    driver: bridge
+      - '5432:5432'
 
 volumes:
   postgres:
-    name: badisfood-postgres
-  pgadmin:
-    name: badisfood-pgadmin
+    name: badisfood-db
