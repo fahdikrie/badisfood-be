@@ -3,8 +3,8 @@ import { User } from '@prisma/client';
 import { compare } from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 
-import { AuthResponseDto } from './dto/auth-response.dto';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { AuthResponseDto } from './dto/auth.output';
+import { RegisterUserDto } from './dto/register.input';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +18,17 @@ export class AuthService {
     const user = await this.userService.findUser(userData);
 
     if (user && this.validatePassword(userData.password, user.password)) {
+      delete user.password;
+      return user;
+    }
+
+    return null;
+  }
+
+  async validateUserById(userId: string): Promise<any> {
+    const user = await this.userService.findUser({ id: userId });
+
+    if (user) {
       delete user.password;
       return user;
     }

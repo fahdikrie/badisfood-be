@@ -3,8 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 
 import { AuthService } from './auth.service';
-import { AuthResponseDto } from './dto/auth-response.dto';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { AuthResponseDto } from './dto/auth.output';
+import { RegisterUserDto } from './dto/register.input';
 
 @Controller('auth')
 export class AuthController {

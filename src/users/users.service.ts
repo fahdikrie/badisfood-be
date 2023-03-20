@@ -1,14 +1,21 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, Role, User } from '@prisma/client';
 import { hash } from 'bcrypt';
+import { SecurityConfig } from 'src/common/config/config.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    readonly configService: ConfigService
+  ) {}
 
   hashPassword(password: string): Promise<string> {
-    return hash(password, 10);
+    const securityConfig = this.configService.get<SecurityConfig>('security');
+
+    return hash(password, securityConfig.bcryptSaltOrRound);
   }
 
   async findUser(
