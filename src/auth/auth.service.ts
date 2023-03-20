@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { compare } from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
@@ -8,16 +8,18 @@ import { RegisterUserDto } from './dto/register.input';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(private userService: UsersService) {}
 
   validatePassword(password: string, hash: string): Promise<boolean> {
     return compare(password, hash);
   }
 
-  async validateUser(userData: User): Promise<any> {
-    const user = await this.userService.findUser(userData);
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.userService.findUser({ username: username });
 
-    if (user && this.validatePassword(userData.password, user.password)) {
+    if (user && this.validatePassword(password, user.password)) {
       delete user.password;
       return user;
     }
@@ -42,9 +44,11 @@ export class AuthService {
     });
 
     if (userExists) {
-      return {
-        user: userExists,
-      };
+      const message = `User ${registerUserDto.username} already exists`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
     }
 
     const user = await this.userService.createUser(registerUserDto);
@@ -56,19 +60,6 @@ export class AuthService {
   }
 
   async login(user: User): Promise<any> {
-    const payload = await this.validateUser(user);
-
-    if (!payload) {
-      return {
-        statusCode: 401,
-        message: 'Invalid credentials',
-      };
-    }
-
-    return {
-      statusCode: 200,
-      message: 'Login successful',
-      user: payload,
-    };
+    return user;
   }
 }
