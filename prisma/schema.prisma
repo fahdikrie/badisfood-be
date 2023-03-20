@@ -15,15 +15,18 @@ enum Role {
   ADMIN     // Can add/delete menus and handle orders
 }
 
+enum OrderStatus {
+  CONFIRMED
+  BEING_PREPARED
+  CANCELLED
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique
   email        String   @unique
   password     String
   role         Role      @default(CUSTOMER)
-
-  refreshToken String?
-  accessToken  String?
 
   carts        Cart[]
 
@@ -75,16 +78,16 @@ model Cart {
 }
 
 model Order {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   total     Float
-  status    String
+  status    OrderStatus @default(CONFIRMED)
 
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   userId    String
 
-  cart      Cart     @relation(fields: [cartId], references: [id])
-  cartId    String   @unique
+  cart      Cart      @relation(fields: [cartId], references: [id])
+  cartId    String    @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
