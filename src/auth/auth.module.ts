@@ -8,6 +8,7 @@ import { UsersModule } from 'src/users/users.module';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { RefreshTokenStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
@@ -30,7 +31,7 @@ import { LocalStrategy } from './strategies/local.strategy';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, RefreshTokenStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })

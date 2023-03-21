@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, Role, User } from '@prisma/client';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { SecurityConfig } from 'src/common/config/config.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -11,6 +11,32 @@ export class UsersService {
     private prisma: PrismaService,
     readonly configService: ConfigService
   ) {}
+
+  validatePassword(password: string, hash: string): Promise<boolean> {
+    return compare(password, hash);
+  }
+
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.findUser({ username: username });
+
+    if (user && this.validatePassword(password, user.password)) {
+      delete user.password;
+      return user;
+    }
+
+    return null;
+  }
+
+  async validateUserById(userId: string): Promise<any> {
+    const user = await this.findUser({ id: userId });
+
+    if (user) {
+      delete user.password;
+      return user;
+    }
+
+    return null;
+  }
 
   async hashPassword(password: string): Promise<string> {
     const securityConfig = this.configService.get<SecurityConfig>('security');

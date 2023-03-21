@@ -1,7 +1,12 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { compare } from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 
 import { AuthResponseDto } from './dto/auth.dto';
@@ -18,8 +23,101 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  validatePassword(password: string, hash: string): Promise<boolean> {
-    return compare(password, hash);
+  async register(registerUserDto: RegisterUserDto): Promise<AuthResponseDto> {
+    const user = await this.usersService.findUser({
+      username: registerUserDto.username,
+    });
+
+    if (user) {
+      const message = `User ${registerUserDto.username} already exists`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    const newUser = await this.usersService.createUser(registerUserDto);
+    delete newUser.password;
+    delete newUser.refreshToken;
+
+    const token = await this.getTokens(newUser.id, newUser.username);
+    await this.updateRefreshToken(newUser.id, token.refreshToken);
+
+    return {
+      user: newUser,
+      ...token,
+    };
+  }
+
+  async login(loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
+    const user = await this.usersService.findUser({
+      username: loginUserDto.username,
+    });
+
+    const isPasswordValid = await this.usersService.validatePassword(
+      loginUserDto.password,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      const message = `Wrong password for user ${loginUserDto.username}`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    const token = await this.getTokens(user.id, user.username);
+    await this.updateRefreshToken(user.id, token.refreshToken);
+
+    delete user.password;
+    delete user.refreshToken;
+
+    return {
+      user,
+      ...token,
+    };
+  }
+
+  async logout(userId: string) {
+    this.usersService.updateUser({
+      where: {
+        id: userId,
+      },
+      data: {
+        refreshToken: null,
+      },
+    });
+  }
+
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.usersService.findUser({ id: userId });
+
+    if (!user || !user.refreshToken) {
+      const message = `User with id ${userId} is not found or unauthorized`;
+
+      this.logger.error(message);
+
+      throw new UnauthorizedException(message);
+    }
+
+    const refreshTokenMatches = await this.usersService.validatePassword(
+      refreshToken,
+      user.refreshToken
+    );
+
+    if (!refreshTokenMatches) {
+      const message = `User ${user.username} does not have a valid refresh token`;
+
+      this.logger.error(message);
+
+      throw new ForbiddenException(message);
+    }
+
+    const tokens = await this.getTokens(user.id, user.username);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return tokens;
   }
 
   async getTokens(userId: string, username: string) {
@@ -57,83 +155,5 @@ export class AuthService {
       where: { id: userId },
       data: { refreshToken: hashedToken },
     });
-  }
-
-  async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersService.findUser({ username: username });
-
-    if (user && this.validatePassword(password, user.password)) {
-      delete user.password;
-      return user;
-    }
-
-    return null;
-  }
-
-  async validateUserById(userId: string): Promise<any> {
-    const user = await this.usersService.findUser({ id: userId });
-
-    if (user) {
-      delete user.password;
-      return user;
-    }
-
-    return null;
-  }
-
-  async register(registerUserDto: RegisterUserDto): Promise<AuthResponseDto> {
-    const user = await this.usersService.findUser({
-      username: registerUserDto.username,
-    });
-
-    if (user) {
-      const message = `User ${registerUserDto.username} already exists`;
-
-      this.logger.error(message);
-
-      throw new BadRequestException(message);
-    }
-
-    const newUser = await this.usersService.createUser(registerUserDto);
-    delete newUser.password;
-    delete newUser.refreshToken;
-
-    const token = await this.getTokens(newUser.id, newUser.username);
-    await this.updateRefreshToken(newUser.id, token.refreshToken);
-
-    return {
-      user: newUser,
-      ...token,
-    };
-  }
-
-  async login(loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
-    const user = await this.usersService.findUser({
-      username: loginUserDto.username,
-    });
-
-    const isPasswordValid = await this.validatePassword(
-      loginUserDto.password,
-      user.password
-    );
-
-    if (!isPasswordValid) {
-      const message = `Wrong password for user ${loginUserDto.username}`;
-
-      this.logger.error(message);
-
-      throw new BadRequestException(message);
-    }
-
-    const token = await this.getTokens(user.id, user.username);
-    await this.updateRefreshToken(user.id, token.refreshToken);
-
-    delete user.password;
-    delete user.refreshToken;
-
-    return {
-      user,
-      ...token,
-    };
   }
 }
