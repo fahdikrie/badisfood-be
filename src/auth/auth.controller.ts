@@ -3,7 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 
 import { AuthService } from './auth.service';
-import { AuthResponseDto } from './dto/auth.output';
+import { AuthResponseDto } from './dto/auth.dto';
+import { LoginUserDto } from './dto/login.input';
 import { RegisterUserDto } from './dto/register.input';
 
 @Controller('auth')
@@ -25,8 +26,10 @@ export class AuthController {
     return await this.authService.register(registerUserDto);
   }
 
-  // @Post('login')
-  // async login() {
-  //   return this.authService.login();
-  // }
+  @Post('register')
+  async login(@Body() loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
+    this.logger.log('Registering user ', loginUserDto.username);
+
+    return await this.authService.login(loginUserDto);
+  }
 }

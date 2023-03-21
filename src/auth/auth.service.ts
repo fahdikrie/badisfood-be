@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { compare } from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 
-import { AuthResponseDto } from './dto/auth.output';
+import { AuthResponseDto } from './dto/auth.dto';
+import { LoginUserDto } from './dto/login.input';
 import { RegisterUserDto } from './dto/register.input';
 
 @Injectable()
@@ -39,11 +39,11 @@ export class AuthService {
   }
 
   async register(registerUserDto: RegisterUserDto): Promise<AuthResponseDto> {
-    const userExists = await this.userService.findUser({
+    const user = await this.userService.findUser({
       username: registerUserDto.username,
     });
 
-    if (userExists) {
+    if (user) {
       const message = `User ${registerUserDto.username} already exists`;
 
       this.logger.error(message);
@@ -51,15 +51,34 @@ export class AuthService {
       throw new BadRequestException(message);
     }
 
-    const user = await this.userService.createUser(registerUserDto);
-    delete user.password;
+    const newUser = await this.userService.createUser(registerUserDto);
+    delete newUser.password;
+
+    return {
+      user: newUser,
+    };
+  }
+
+  async login(loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
+    const user = await this.userService.findUser({
+      username: loginUserDto.username,
+    });
+
+    const isPasswordValid = await this.validatePassword(
+      loginUserDto.password,
+      user.password
+    );
+
+    if (isPasswordValid) {
+      const message = `Wrong password for user ${loginUserDto.username}`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
 
     return {
       user,
     };
-  }
-
-  async login(user: User): Promise<any> {
-    return user;
   }
 }
