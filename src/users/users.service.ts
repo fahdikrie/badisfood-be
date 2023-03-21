@@ -12,7 +12,7 @@ export class UsersService {
     readonly configService: ConfigService
   ) {}
 
-  hashPassword(password: string): Promise<string> {
+  async hashPassword(password: string): Promise<string> {
     const securityConfig = this.configService.get<SecurityConfig>('security');
 
     return hash(password, securityConfig.bcryptSaltOrRound);

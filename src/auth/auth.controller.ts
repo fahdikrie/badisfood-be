@@ -26,7 +26,7 @@ export class AuthController {
     return await this.authService.register(registerUserDto);
   }
 
-  @Post('register')
+  @Post('login')
   async login(@Body() loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
     this.logger.log('Registering user ', loginUserDto.username);
 
