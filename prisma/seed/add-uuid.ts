@@ -20,16 +20,13 @@ const main = async () => {
     return addUUIDToObj(item);
   });
 
-  console.log(data);
-  console.log(JSON.stringify(data));
-
   try {
     fs.writeFileSync(
       './prisma/seed/menu-data.json',
       JSON.stringify(data, null, 2)
     );
   } catch (err) {
-    console.log('Error writing Metadata.json:' + err.message);
+    console.log('error on adding uuid:' + err.message);
   }
 };
 
