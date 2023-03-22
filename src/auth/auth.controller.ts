@@ -27,14 +27,14 @@ export class AuthController {
   async register(
     @Body() registerUserDto: RegisterUserDto
   ): Promise<AuthResponseDto> {
-    this.logger.log('Registering user ', registerUserDto.username);
+    this.logger.log(`Registering user ${registerUserDto.username}`);
 
     return await this.authService.register(registerUserDto);
   }
 
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
-    this.logger.log('Registering user ', loginUserDto.username);
+    this.logger.log(`Registering user ${loginUserDto.username}`);
 
     return await this.authService.login(loginUserDto);
   }

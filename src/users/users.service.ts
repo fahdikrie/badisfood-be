@@ -78,7 +78,7 @@ export class UsersService {
         username: data.username,
         email: data.email,
         password: hashedPassword,
-        role: Role.CUSTOMER,
+        role: data.role ?? Role.CUSTOMER,
       },
     });
   }
