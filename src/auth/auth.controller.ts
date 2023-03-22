@@ -44,7 +44,7 @@ export class AuthController {
   logout(@Req() req: Request) {
     const user = req.user;
 
-    this.logger.log(`Logging user ${(user as User).id} out`);
+    this.logger.log(`Logging user with user id ${(user as User).id} out`);
 
     this.authService.logout((user as User).id);
   }

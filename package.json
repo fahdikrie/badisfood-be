@@ -22,7 +22,9 @@
     "docker:db": "docker-compose -f docker-compose.db.yml up -d",
     "docker:seed": "docker exec -it nest-api npm run seed",
     "docker": "docker-compose up -d",
-    "docker:build": "docker-compose build"
+    "docker:build": "docker-compose build",
+    "uuid-to-seed": "ts-node prisma/seed/add-uuid.ts",
+    "seed": "ts-node prisma/seed/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^9.0.0",
