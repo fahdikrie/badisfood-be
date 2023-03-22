@@ -34,7 +34,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
-    this.logger.log(`Registering user ${loginUserDto.username}`);
+    this.logger.log(`Logging user ${loginUserDto.username} in`);
 
     return await this.authService.login(loginUserDto);
   }

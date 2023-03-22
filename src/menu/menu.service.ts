@@ -23,4 +23,32 @@ export class MenuService {
       orderBy,
     });
   }
+
+  async findMenu(where: Prisma.MenuWhereUniqueInput): Promise<Menu | null> {
+    return this.prisma.menu.findUnique({
+      where,
+    });
+  }
+
+  async createMenu(data: Prisma.MenuCreateInput): Promise<Menu> {
+    return this.prisma.menu.create({ data });
+  }
+
+  async updateMenu(params: {
+    where: Prisma.MenuWhereUniqueInput;
+    data: Prisma.MenuUpdateInput;
+  }): Promise<Menu> {
+    const { where, data } = params;
+
+    return this.prisma.menu.update({
+      data,
+      where,
+    });
+  }
+
+  async deleteMenu(where: Prisma.MenuWhereUniqueInput): Promise<Menu> {
+    return this.prisma.menu.delete({
+      where,
+    });
+  }
 }
