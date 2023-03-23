@@ -10,6 +10,7 @@ import { CartService } from './cart/cart.service';
 import config from './common/config/config';
 import { MenuController } from './menu/menu.controller';
 import { MenuModule } from './menu/menu.module';
+import { OrderModule } from './order/order.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersController } from './users/users.controller';
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     MenuModule,
     CartModule,
+    OrderModule,
   ],
   controllers: [AppController, AuthController, UsersController, MenuController],
   providers: [AppService, PrismaService, CartService],

@@ -6,9 +6,10 @@ import {
   Scope,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { Cart, CartItem, Prisma, User } from '@prisma/client';
+import { Cart, CartItem, Order, Prisma, User } from '@prisma/client';
 import { Request } from 'express';
 import { MenuService } from 'src/menu/menu.service';
+import { OrderService } from 'src/order/order.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import { UpdateCartItemDto } from './dto/update-cart-item.input';
@@ -19,8 +20,9 @@ export class CartService {
   private readonly logger = new Logger(CartService.name);
 
   constructor(
-    private prismaService: PrismaService,
+    private prisma: PrismaService,
     private menuService: MenuService,
+    private orderService: OrderService,
     @Inject(REQUEST) private readonly request: Request
   ) {}
 
@@ -33,7 +35,7 @@ export class CartService {
   }): Promise<Cart[]> {
     const { skip, take, cursor, where, orderBy } = params;
 
-    return this.prismaService.cart.findMany({
+    return this.prisma.cart.findMany({
       skip,
       take,
       cursor,
@@ -43,7 +45,7 @@ export class CartService {
   }
 
   async findCart(where: Prisma.CartWhereUniqueInput): Promise<Cart | null> {
-    const cart = await this.prismaService.cart.findUnique({
+    const cart = await this.prisma.cart.findUnique({
       where,
     });
 
@@ -71,7 +73,7 @@ export class CartService {
       throw new BadRequestException(message);
     }
 
-    const cart = await this.prismaService.cart.upsert({
+    const cart = await this.prisma.cart.upsert({
       where: {
         userId: (this.request.user as User).id,
       },
@@ -88,7 +90,7 @@ export class CartService {
       },
     });
 
-    return this.prismaService.cartItem.upsert({
+    return this.prisma.cartItem.upsert({
       where: {
         menuId_cartId: {
           menuId,
@@ -99,7 +101,7 @@ export class CartService {
         quantity: {
           increment: 1,
         },
-        total: {
+        totalPrice: {
           increment: menu.price,
         },
       },
@@ -115,7 +117,7 @@ export class CartService {
           },
         },
         quantity: 1,
-        total: menu.price,
+        totalPrice: menu.price,
       },
     });
   }
@@ -124,7 +126,7 @@ export class CartService {
     cartId: string,
     updateItemsData: UpdateCartItemsDto[]
   ): Promise<CartItem[]> {
-    const cartItems = await this.prismaService.cartItem.findMany({
+    const cartItems = await this.prisma.cartItem.findMany({
       where: {
         cartId,
       },
@@ -169,7 +171,7 @@ export class CartService {
       throw new BadRequestException(message);
     }
 
-    return await this.prismaService.cartItem.update({
+    return await this.prisma.cartItem.update({
       where: {
         menuId_cartId: {
           menuId,
@@ -178,13 +180,13 @@ export class CartService {
       },
       data: {
         quantity: updateItemData.newQuantity,
-        total: updateItemData.newQuantity * menu.price,
+        totalPrice: updateItemData.newQuantity * menu.price,
       },
     });
   }
 
   async removeCartItem(cartId: string, menuId: string): Promise<CartItem> {
-    return await this.prismaService.cartItem.delete({
+    return await this.prisma.cartItem.delete({
       where: {
         menuId_cartId: {
           menuId,
@@ -195,10 +197,24 @@ export class CartService {
   }
 
   async emptyCart(cartId: string): Promise<void> {
-    await this.prismaService.cart.delete({
+    await this.prisma.cart.delete({
       where: {
         id: cartId,
       },
     });
+  }
+
+  async checkoutCart(cartId: string): Promise<Order> {
+    const cart = await this.findCart({ id: cartId });
+
+    if (!cart) {
+      const message = `Cart with id ${cartId} does not exist`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    return await this.orderService.createOrder(cartId);
   }
 }

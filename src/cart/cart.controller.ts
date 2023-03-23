@@ -9,7 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { Cart, CartItem } from '@prisma/client';
+import { Cart, CartItem, Order } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 
@@ -98,5 +98,12 @@ export class CartController {
     this.logger.log(`Emptying cart with id ${cartId}`);
 
     return this.menuService.emptyCart(cartId);
+  }
+
+  @Post(':cartId/checkout')
+  async checkoutCart(@Param('cartId') cartId: string): Promise<Order> {
+    this.logger.log(`Checking out cart with id ${cartId}`);
+
+    return this.menuService.checkoutCart(cartId);
   }
 }
