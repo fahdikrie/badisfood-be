@@ -39,15 +39,17 @@ model User {
 }
 
 model Menu {
-  id        String   @id @default(uuid())
-  name      String
-  image     String?
-  price     Float
+  id          String   @id @default(uuid())
+  name        String
+  image       String?
+  price       Float
 
-  cartItems CartItem[]
+  cartItems   CartItem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  orderItems  OrderItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model CartItem {
@@ -55,10 +57,10 @@ model CartItem {
   quantity  Int
   total     Float
 
-  menu      Menu     @relation(fields: [menuId], references: [id])
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
   menuId    String
 
-  cart      Cart     @relation(fields: [cartId], references: [id])
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   cartId    String
 
   createdAt DateTime @default(now())
@@ -70,28 +72,42 @@ model CartItem {
 model Cart {
   id        String   @id @default(uuid())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String   @unique
 
   cartItems CartItem[]
-
-  order     Order?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Order {
+model OrderItem {
   id        String    @id @default(uuid())
+  quantity  Int
   total     Float
-  status    OrderStatus @default(CONFIRMED)
 
-  user      User      @relation(fields: [userId], references: [id])
-  userId    String
+  menu      Menu      @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  menuId    String
 
-  cart      Cart      @relation(fields: [cartId], references: [id])
-  cartId    String    @unique
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([menuId, orderId])
+}
+
+model Order {
+  id          String    @id @default(uuid())
+  total       Float
+  status      OrderStatus @default(CONFIRMED)
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId      String?
+
+  orderItems  OrderItem[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

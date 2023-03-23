@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Param,
@@ -18,12 +19,13 @@ import { UpdateCartItemsDto } from './dto/update-cart-items.input';
 
 /**
  * API for managing a user's food cart.
- * 1. addMenuToCart - Add a menu to the cart
- * 2. addMenusToCart - Add batch of menus to the cart (ga perlu)
- * 3. updateCartItem - Update a menu in the cart
- * 4. removeCartItem - Remove a menu from the cart
- * 5. emptyCart - Remove all menus from the cart
- * 6. checkoutCart - Make an order from the cart
+ * - addMenuToCart - Add a menu to the cart
+ * - addMenusToCart - Add batch of menus to the cart (ga perlu)
+ * - updateCartItem - Update a menu in the cart
+ * - updateCartItems - Update batch of menus in the cart
+ * - removeCartItem - Remove a menu from the cart
+ * - emptyCart - Remove all menus from the cart
+ * - checkoutCart - Make an order from the cart
  */
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('cart')
@@ -60,6 +62,16 @@ export class CartController {
     return this.menuService.addMenuToCart(menuId);
   }
 
+  @Put(':cartId')
+  async updateCartItems(
+    @Param('cartId') cartId: string,
+    @Body() cartItems: UpdateCartItemsDto[]
+  ): Promise<CartItem[]> {
+    this.logger.log(`Updating menus on cartId ${cartId} in cart`);
+
+    return this.menuService.updateCartItems(cartId, cartItems);
+  }
+
   @Put(':cartId/:menuId')
   async updateCartItem(
     @Param('cartId') cartId: string,
@@ -71,13 +83,20 @@ export class CartController {
     return this.menuService.updateCartItem(cartId, menuId, cartItem);
   }
 
-  @Put(':cartId')
-  async updateCartItems(
+  @Delete(':cartId/:menuId')
+  async removeCartItem(
     @Param('cartId') cartId: string,
-    @Body() cartItems: UpdateCartItemsDto[]
-  ): Promise<CartItem[]> {
-    this.logger.log(`Updating menus on cartId ${cartId} in cart`);
+    @Param('menuId') menuId: string
+  ): Promise<CartItem> {
+    this.logger.log(`Removing menu with id ${menuId} from cart`);
 
-    return this.menuService.updateCartItems(cartId, cartItems);
+    return this.menuService.removeCartItem(cartId, menuId);
+  }
+
+  @Delete(':cartId')
+  async emptyCart(@Param('cartId') cartId: string): Promise<void> {
+    this.logger.log(`Emptying cart with id ${cartId}`);
+
+    return this.menuService.emptyCart(cartId);
   }
 }

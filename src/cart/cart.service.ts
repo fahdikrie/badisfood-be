@@ -120,35 +120,6 @@ export class CartService {
     });
   }
 
-  async updateCartItem(
-    cartId: string,
-    menuId: string,
-    updateItemData: UpdateCartItemDto
-  ): Promise<CartItem> {
-    const menu = await this.menuService.findMenu({ id: menuId });
-
-    if (!menu) {
-      const message = `Menu with id ${menuId} does not exist`;
-
-      this.logger.error(message);
-
-      throw new BadRequestException(message);
-    }
-
-    return await this.prismaService.cartItem.update({
-      where: {
-        menuId_cartId: {
-          menuId,
-          cartId,
-        },
-      },
-      data: {
-        quantity: updateItemData.newQuantity,
-        total: updateItemData.newQuantity * menu.price,
-      },
-    });
-  }
-
   async updateCartItems(
     cartId: string,
     updateItemsData: UpdateCartItemsDto[]
@@ -181,5 +152,53 @@ export class CartService {
     }
 
     return updatedCartItems;
+  }
+
+  async updateCartItem(
+    cartId: string,
+    menuId: string,
+    updateItemData: UpdateCartItemDto
+  ): Promise<CartItem> {
+    const menu = await this.menuService.findMenu({ id: menuId });
+
+    if (!menu) {
+      const message = `Menu with id ${menuId} does not exist`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    return await this.prismaService.cartItem.update({
+      where: {
+        menuId_cartId: {
+          menuId,
+          cartId,
+        },
+      },
+      data: {
+        quantity: updateItemData.newQuantity,
+        total: updateItemData.newQuantity * menu.price,
+      },
+    });
+  }
+
+  async removeCartItem(cartId: string, menuId: string): Promise<CartItem> {
+    return await this.prismaService.cartItem.delete({
+      where: {
+        menuId_cartId: {
+          menuId,
+          cartId,
+        },
+      },
+    });
+  }
+
+  async emptyCart(cartId: string): Promise<void> {
+    await this.prismaService.cart.delete({
+      where: {
+        id: cartId,
+      },
+    });
   }
 }
