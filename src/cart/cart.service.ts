@@ -1,0 +1,185 @@
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  Scope,
+} from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Cart, CartItem, Prisma, User } from '@prisma/client';
+import { Request } from 'express';
+import { MenuService } from 'src/menu/menu.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+import { UpdateCartItemDto } from './dto/update-cart-item.input';
+import { UpdateCartItemsDto } from './dto/update-cart-items.input';
+
+@Injectable({ scope: Scope.REQUEST })
+export class CartService {
+  private readonly logger = new Logger(CartService.name);
+
+  constructor(
+    private prismaService: PrismaService,
+    private menuService: MenuService,
+    @Inject(REQUEST) private readonly request: Request
+  ) {}
+
+  async findCarts(params: {
+    skip?: number;
+    take?: number;
+    cursor?: Prisma.CartWhereUniqueInput;
+    where?: Prisma.CartWhereInput;
+    orderBy?: Prisma.CartOrderByWithRelationInput;
+  }): Promise<Cart[]> {
+    const { skip, take, cursor, where, orderBy } = params;
+
+    return this.prismaService.cart.findMany({
+      skip,
+      take,
+      cursor,
+      where,
+      orderBy,
+    });
+  }
+
+  async findCart(where: Prisma.CartWhereUniqueInput): Promise<Cart | null> {
+    const cart = await this.prismaService.cart.findUnique({
+      where,
+    });
+
+    if (!cart) {
+      const message = `Cart with ${
+        where.userId ? 'userId ' + where.userId : 'id ' + where.id
+      } does not exist`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    return cart;
+  }
+
+  async addMenuToCart(menuId: string): Promise<CartItem> {
+    const menu = await this.menuService.findMenu({ id: menuId });
+
+    if (!menu) {
+      const message = `Menu with id ${menuId} does not exist`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    const cart = await this.prismaService.cart.upsert({
+      where: {
+        userId: (this.request.user as User).id,
+      },
+      update: {},
+      create: {
+        user: {
+          connect: {
+            id: (this.request.user as User).id,
+          },
+        },
+      },
+      include: {
+        cartItems: true,
+      },
+    });
+
+    return this.prismaService.cartItem.upsert({
+      where: {
+        menuId_cartId: {
+          menuId,
+          cartId: cart.id,
+        },
+      },
+      update: {
+        quantity: {
+          increment: 1,
+        },
+        total: {
+          increment: menu.price,
+        },
+      },
+      create: {
+        menu: {
+          connect: {
+            id: menuId,
+          },
+        },
+        cart: {
+          connect: {
+            id: cart.id,
+          },
+        },
+        quantity: 1,
+        total: menu.price,
+      },
+    });
+  }
+
+  async updateCartItem(
+    cartId: string,
+    menuId: string,
+    updateItemData: UpdateCartItemDto
+  ): Promise<CartItem> {
+    const menu = await this.menuService.findMenu({ id: menuId });
+
+    if (!menu) {
+      const message = `Menu with id ${menuId} does not exist`;
+
+      this.logger.error(message);
+
+      throw new BadRequestException(message);
+    }
+
+    return await this.prismaService.cartItem.update({
+      where: {
+        menuId_cartId: {
+          menuId,
+          cartId,
+        },
+      },
+      data: {
+        quantity: updateItemData.newQuantity,
+        total: updateItemData.newQuantity * menu.price,
+      },
+    });
+  }
+
+  async updateCartItems(
+    cartId: string,
+    updateItemsData: UpdateCartItemsDto[]
+  ): Promise<CartItem[]> {
+    const cartItems = await this.prismaService.cartItem.findMany({
+      where: {
+        cartId,
+      },
+      include: {
+        menu: true,
+      },
+    });
+
+    const updatedCartItems = [];
+
+    for (const cartItem of cartItems) {
+      const updateItemData = updateItemsData.find(
+        (updateItemData) => updateItemData.menuId === cartItem.menuId
+      );
+
+      if (updateItemData) {
+        const updatedCartItem = await this.updateCartItem(
+          cartId,
+          cartItem.menuId,
+          updateItemData
+        );
+
+        updatedCartItems.push(updatedCartItem);
+      }
+    }
+
+    return updatedCartItems;
+  }
+}

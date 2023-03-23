@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
+import { CartModule } from './cart/cart.module';
+import { CartService } from './cart/cart.service';
 import config from './common/config/config';
 import { MenuController } from './menu/menu.controller';
 import { MenuModule } from './menu/menu.module';
@@ -20,8 +22,9 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     PrismaModule,
     MenuModule,
+    CartModule,
   ],
   controllers: [AppController, AuthController, UsersController, MenuController],
-  providers: [AppService, PrismaService],
+  providers: [AppService, PrismaService, CartService],
 })
 export class AppModule {}

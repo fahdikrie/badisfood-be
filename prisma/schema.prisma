@@ -30,7 +30,7 @@ model User {
 
   refreshToken String?
 
-  carts        Cart[]
+  cart         Cart?
 
   orders       Order[]
 
@@ -63,13 +63,15 @@ model CartItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([menuId, cartId])
 }
 
 model Cart {
   id        String   @id @default(uuid())
 
   user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  userId    String   @unique
 
   cartItems CartItem[]
 
