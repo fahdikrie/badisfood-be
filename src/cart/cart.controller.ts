@@ -17,16 +17,6 @@ import { CartService } from './cart.service';
 import { UpdateCartItemDto } from './dto/update-cart-item.input';
 import { UpdateCartItemsDto } from './dto/update-cart-items.input';
 
-/**
- * API for managing a user's food cart.
- * - addMenuToCart - Add a menu to the cart
- * - addMenusToCart - Add batch of menus to the cart (ga perlu)
- * - updateCartItem - Update a menu in the cart
- * - updateCartItems - Update batch of menus in the cart
- * - removeCartItem - Remove a menu from the cart
- * - emptyCart - Remove all menus from the cart
- * - checkoutCart - Make an order from the cart
- */
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('cart')
 export class CartController {
