@@ -24,7 +24,8 @@
     "docker": "docker-compose up -d",
     "docker:build": "docker-compose build",
     "uuid-to-seed": "ts-node prisma/seed/add-uuid.ts",
-    "seed": "ts-node prisma/seed/seed.ts"
+    "seed": "ts-node prisma/seed/seed.ts",
+    "postinstall": "npx prisma generate && npm run build"
   },
   "dependencies": {
     "@nestjs/common": "^9.0.0",
